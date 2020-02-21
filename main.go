@@ -9,6 +9,8 @@ import (
 )
 
 func main() {
+	setFlags() // Activate user deginated options
+
 	// Work in progress
 	fmt.Println("Initializing ethoFS Node For Upload ")
 
@@ -26,14 +28,40 @@ func main() {
 	time.Sleep(5 * time.Second)
 
 	fmt.Println("Syncing ethoFS bootnodes with ETHO network contract")
-	bootstrapNodes, err := GetBootnodeContractValues()
+	//bootstrapNodes, err := GetBootnodeContractValues()
 	if err != nil {
 		panic(fmt.Errorf("failed to sync bootnodes with ether-1 network: %s", err))
 	}
 
-	fmt.Println("Initiating connection to ethoFS bootnodes")
-	connectToPeers(ctx, ipfs, bootstrapNodes)
-	fmt.Println("ethoFS bootnode connection successful")
+	fmt.Println("Waiting for ethoFS bootnode connections")
+//	connectToPeers(ctx, ipfs, bootstrapNodes)
+	fmt.Println("ethoFS bootnode connections successful")
+
+	if uploadFlag && recursiveFlag && inputPath != "" {
+
+		uploadDirectory,_, err := getUnixfsNode(inputPath)
+		if err != nil {
+			panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
+		}
+		cidDirectory, err := ipfs.Unixfs().Add(ctx, uploadDirectory)
+		if err != nil {
+			panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
+		}
+		fmt.Printf("ethoFS data upload comlete\n\nUpload Hash\n%s\n", cidDirectory.String())
+
+	} else if uploadFlag && inputPath != "" {
+
+		uploadFile,_, err := getUnixfsNode(inputPath)
+		if err != nil {
+			panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
+		}
+		cidFile, err := ipfs.Unixfs().Add(ctx, uploadFile)
+		if err != nil {
+			panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
+		}
+		fmt.Printf("ethoFS data upload comlete\n\nUpload Hash\n%s\n", cidFile.String())
+
+	}
 
 	time.Sleep(5 * time.Second)
 	fmt.Println("Stopping ethoFS node")

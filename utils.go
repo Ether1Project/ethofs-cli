@@ -5,7 +5,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+//	"log"
 	"os"
 	"sync"
 
@@ -44,9 +44,9 @@ func connectToPeers(ctx context.Context, ipfs icore.CoreAPI, peers []string) err
 			defer wg.Done()
 			err := ipfs.Swarm().Connect(ctx, *peerInfo)
 			if err != nil {
-				log.Printf("failed to connect to %s: %s", peerInfo.ID, err)
+				//log.Printf("failed to connect to %s: %s", peerInfo.ID, err)
 			} else {
-				fmt.Println("ethoFS Node connection successful!")
+				//fmt.Println("ethoFS Node connection successful!")
 			}
 		}(peerInfo)
 	}
@@ -54,36 +54,38 @@ func connectToPeers(ctx context.Context, ipfs icore.CoreAPI, peers []string) err
 	return nil
 }
 
-func getUnixfsFile(path string) (files.File, error) {
+func getUnixfsFile(path string) (files.File, int64, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer file.Close()
 
 	st, err := file.Stat()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
+	fmt.Printf("Data upload size: %d\n", st.Size())
 
 	f, err := files.NewReaderPathFile(path, file, st)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return f, nil
+	return f, st.Size(), nil
 }
 
-func getUnixfsNode(path string) (files.Node, error) {
+func getUnixfsNode(path string) (files.Node, int64, error) {
 	st, err := os.Stat(path)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
+	fmt.Printf("Data upload size: %d\n", st.Size())
 
 	f, err := files.NewSerialFile(path, false, st)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return f, nil
+	return f, st.Size(), nil
 }
