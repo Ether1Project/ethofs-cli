@@ -17,13 +17,24 @@ func main() {
 
 	// Spawn a node using a temporary path, creating a temporary repo for the run
 	fmt.Println("Spawning node on a temporary repo")
-	//ipfs, err := spawnEphemeral(ctx)
-	_, err := spawnEphemeral(ctx)
+	ipfs, err := spawnEphemeral(ctx)
 	if err != nil {
 		panic(fmt.Errorf("failed to spawn ephemeral node: %s", err))
 	}
 
 	fmt.Println("ethoFS node is running")
+	time.Sleep(5 * time.Second)
+
+	fmt.Println("Syncing ethoFS bootnodes with ETHO network contract")
+	bootstrapNodes, err := GetBootnodeContractValues()
+	if err != nil {
+		panic(fmt.Errorf("failed to sync bootnodes with ether-1 network: %s", err))
+	}
+
+	fmt.Println("Initiating connection to ethoFS bootnodes")
+	connectToPeers(ctx, ipfs, bootstrapNodes)
+	fmt.Println("ethoFS bootnode connection successful")
+
 	time.Sleep(5 * time.Second)
 	fmt.Println("Stopping ethoFS node")
 	time.Sleep(1 * time.Second)

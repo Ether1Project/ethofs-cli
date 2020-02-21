@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -44,6 +45,8 @@ func connectToPeers(ctx context.Context, ipfs icore.CoreAPI, peers []string) err
 			err := ipfs.Swarm().Connect(ctx, *peerInfo)
 			if err != nil {
 				log.Printf("failed to connect to %s: %s", peerInfo.ID, err)
+			} else {
+				fmt.Println("ethoFS Node connection successful!")
 			}
 		}(peerInfo)
 	}
