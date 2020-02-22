@@ -8,6 +8,7 @@ import (
 //	"log"
 	"os"
 	"sync"
+	"time"
 
 	files "github.com/ipfs/go-ipfs-files"
 	icore "github.com/ipfs/interface-go-ipfs-core"
@@ -18,17 +19,21 @@ import (
 )
 
 // connectToPeers connect to specific peer via id
-func connectToPeers(ctx context.Context, ipfs icore.CoreAPI, peers []string) error {
+func connectToPeers(ctxOLD context.Context, ipfs icore.CoreAPI, peers []string) (int64, error) {
+
+	connectedPeers := int64(0)
+
+	ctx, _ := context.WithTimeout(context.Background(), 5 * time.Second)
 	var wg sync.WaitGroup
 	peerInfos := make(map[peer.ID]*peerstore.PeerInfo, len(peers))
 	for _, addrStr := range peers {
 		addr, err := ma.NewMultiaddr(addrStr)
 		if err != nil {
-			return err
+			return connectedPeers, err
 		}
 		pii, err := peerstore.InfoFromP2pAddr(addr)
 		if err != nil {
-			return err
+			return connectedPeers, err
 		}
 		pi, ok := peerInfos[pii.ID]
 		if !ok {
@@ -46,12 +51,13 @@ func connectToPeers(ctx context.Context, ipfs icore.CoreAPI, peers []string) err
 			if err != nil {
 				//log.Printf("failed to connect to %s: %s", peerInfo.ID, err)
 			} else {
+				connectedPeers++
 				//fmt.Println("ethoFS Node connection successful!")
 			}
 		}(peerInfo)
 	}
 	wg.Wait()
-	return nil
+	return connectedPeers, nil
 }
 
 func getUnixfsFile(path string) (files.File, int64, error) {

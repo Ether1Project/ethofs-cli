@@ -28,14 +28,18 @@ func main() {
 	time.Sleep(5 * time.Second)
 
 	fmt.Println("Syncing ethoFS bootnodes with ETHO network contract")
-	//bootstrapNodes, err := GetBootnodeContractValues()
+	bootstrapNodes, err := GetBootnodeContractValues()
 	if err != nil {
 		panic(fmt.Errorf("failed to sync bootnodes with ether-1 network: %s", err))
 	}
 
 	fmt.Println("Waiting for ethoFS bootnode connections")
-//	connectToPeers(ctx, ipfs, bootstrapNodes)
-	fmt.Println("ethoFS bootnode connections successful")
+	connectedPeers,_ := connectToPeers(ctx, ipfs, bootstrapNodes)
+	if connectedPeers > 1 {
+		fmt.Println("ethoFS bootnode connections successful")
+	} else {
+		panic(fmt.Errorf("failed to connect to ethoFS bootnodes"))
+	}
 
 	if uploadFlag && recursiveFlag && inputPath != "" {
 
@@ -47,7 +51,7 @@ func main() {
 		if err != nil {
 			panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
 		}
-		fmt.Printf("ethoFS data upload comlete\n\nUpload Hash\n%s\n", cidDirectory.String())
+		fmt.Printf("ethoFS data upload complete\n\nUpload Hash\n%s\n", cidDirectory.String())
 
 	} else if uploadFlag && inputPath != "" {
 
@@ -59,7 +63,7 @@ func main() {
 		if err != nil {
 			panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
 		}
-		fmt.Printf("ethoFS data upload comlete\n\nUpload Hash\n%s\n", cidFile.String())
+		fmt.Printf("ethoFS data upload complete\n\nUpload Hash\n%s\n", cidFile.String())
 
 	}
 
