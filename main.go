@@ -51,8 +51,13 @@ func main() {
 		if err != nil {
 			panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
 		}
-		fmt.Printf("ethoFS data upload complete\n\nUpload Hash\n%s\n", cidDirectory.String())
 
+		go verifyUpload(ctx, ipfs, cidDirectory)
+		if true {
+			fmt.Printf("ethoFS data upload complete\n\nUpload Hash\n%s\n", cidDirectory.String())
+		} else {
+			fmt.Printf("ethoFS data upload failed\n\nUpload Hash\n%s\n", cidDirectory.String())
+		}
 	} else if uploadFlag && inputPath != "" {
 
 		uploadFile,_, err := getUnixfsNode(inputPath)
@@ -63,12 +68,18 @@ func main() {
 		if err != nil {
 			panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
 		}
-		fmt.Printf("ethoFS data upload complete\n\nUpload Hash\n%s\n", cidFile.String())
+
+		go verifyUpload(ctx, ipfs, cidFile)
+		if true {
+			fmt.Printf("ethoFS data upload complete\n\nUpload Hash\n%s\n", cidFile.String())
+		} else {
+			fmt.Printf("ethoFS data upload failed\n\nUpload Hash\n%s\n", cidFile.String())
+		}
 
 	}
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(500 * time.Second)
 	fmt.Println("Stopping ethoFS node")
-	time.Sleep(1 * time.Second)
+	time.Sleep(10 * time.Second)
 	fmt.Println("Exiting..")
 }

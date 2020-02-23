@@ -12,8 +12,11 @@ import (
 
 	files "github.com/ipfs/go-ipfs-files"
 	icore "github.com/ipfs/interface-go-ipfs-core"
+	options "github.com/ipfs/interface-go-ipfs-core/options"
+	path "github.com/ipfs/interface-go-ipfs-core/path"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
+//	routing "github.com/libp2p/go-libp2p-core/routing"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 )
@@ -58,6 +61,34 @@ func connectToPeers(ctxOLD context.Context, ipfs icore.CoreAPI, peers []string) 
 	}
 	wg.Wait()
 	return connectedPeers, nil
+}
+
+func verifyUpload(ctx context.Context, ipfs icore.CoreAPI, cid path.Path) bool {
+	dhtApi := ipfs.Dht()
+	out, err := dhtApi.FindProviders(ctx, cid, options.Dht.NumProviders(10))
+	if err != nil {
+		fmt.Printf("Error finding providers: %s\n", cid.String())
+		return false
+	}
+
+	go func(out <-chan peer.AddrInfo) {
+		provider := <-out
+		fmt.Printf("Provider found - ID: %s\n", provider.ID.String())
+	}(out)
+
+	for {
+		time.Sleep(5 * time.Second)
+		out, err = dhtApi.FindProviders(ctx, cid, options.Dht.NumProviders(10))
+		if err != nil {
+			fmt.Printf("Error finding providers: %s\n", cid.String())
+		}
+		go func(out <-chan peer.AddrInfo) {
+			provider := <-out
+			fmt.Printf("Provider found - ID: %s\n", provider.ID.String())
+		}(out)
+
+	}
+	return true
 }
 
 func getUnixfsFile(path string) (files.File, int64, error) {
