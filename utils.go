@@ -5,7 +5,6 @@ package main
 import (
 	"context"
 	"fmt"
-//	"log"
 	"os"
 	"sync"
 	"time"
@@ -16,7 +15,6 @@ import (
 	path "github.com/ipfs/interface-go-ipfs-core/path"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
-//	routing "github.com/libp2p/go-libp2p-core/routing"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 )
@@ -64,6 +62,7 @@ func connectToPeers(ctxOLD context.Context, ipfs icore.CoreAPI, peers []string) 
 }
 
 func verifyUpload(ctx context.Context, ipfs icore.CoreAPI, cid path.Path) bool {
+	providerCount := int64(0)
 	dhtApi := ipfs.Dht()
 	out, err := dhtApi.FindProviders(ctx, cid, options.Dht.NumProviders(10))
 	if err != nil {
@@ -71,24 +70,32 @@ func verifyUpload(ctx context.Context, ipfs icore.CoreAPI, cid path.Path) bool {
 		return false
 	}
 
-	go func(out <-chan peer.AddrInfo) {
-		provider := <-out
-		fmt.Printf("Provider found - ID: %s\n", provider.ID.String())
-	}(out)
-
 	for {
-		time.Sleep(5 * time.Second)
-		out, err = dhtApi.FindProviders(ctx, cid, options.Dht.NumProviders(10))
-		if err != nil {
-			fmt.Printf("Error finding providers: %s\n", cid.String())
+		select {
+     		case provider := <-out:
+			if provider.ID.String() == "" {
+				providerCount = 0
+				out, err = dhtApi.FindProviders(ctx, cid, options.Dht.NumProviders(10))
+				if err != nil {
+					//fmt.Printf("Error finding providers: %s\n", cid.String())
+					return false
+				}
+				time.Sleep(1 * time.Second)
+			} else {
+				providerCount++
+	          		//fmt.Printf("Provider found - ID: %s Provider Count: %d\n", provider.ID.String(), providerCount)
+				if providerCount > 3 {
+					//fmt.Println("Upload Validation Complete")
+					return true
+				} else {
+					time.Sleep(1 * time.Second)
+				}
+			}
+		default:
+			time.Sleep(1 * time.Second)
 		}
-		go func(out <-chan peer.AddrInfo) {
-			provider := <-out
-			fmt.Printf("Provider found - ID: %s\n", provider.ID.String())
-		}(out)
-
 	}
-	return true
+	return false
 }
 
 func getUnixfsFile(path string) (files.File, int64, error) {
@@ -102,7 +109,7 @@ func getUnixfsFile(path string) (files.File, int64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	fmt.Printf("Data upload size: %d\n", st.Size())
+	//fmt.Printf("Data upload size: %d\n", st.Size())
 
 	f, err := files.NewReaderPathFile(path, file, st)
 	if err != nil {
@@ -117,7 +124,7 @@ func getUnixfsNode(path string) (files.Node, int64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	fmt.Printf("Data upload size: %d\n", st.Size())
+	//fmt.Printf("Data upload size: %d\n", st.Size())
 
 	f, err := files.NewSerialFile(path, false, st)
 	if err != nil {
