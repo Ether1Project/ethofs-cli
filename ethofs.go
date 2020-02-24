@@ -315,3 +315,57 @@ func ExtendContract(key string, contractAddress string, duration uint32) {
 	fmt.Printf("Contract Extension Tx Sent: %s", tx.Hash().Hex())
 	fmt.Println("\n")
 }
+
+//RemoveContract initates the ethoFS contract removal tx
+func RemoveContract(key string, contractAddress string) {
+	client, err := ethclient.Dial(rpcLocation)
+	if err != nil {
+		log.Fatal(err)
+	}
+	privateKey, err := crypto.HexToECDSA(key)
+	if err != nil {
+        	log.Fatal(err)
+	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("error casting public key to ECDSA")
+	}
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+
+	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	auth := bind.NewKeyedTransactor(privateKey)
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.GasLimit = uint64(3000000) // in units
+	auth.GasPrice = gasPrice
+
+	address := common.HexToAddress(controllerContractAddress)
+	instance, err := NewEthoFSController(address, client)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Get hosting contract main hash
+	contractMainHash, err := instance.GetMainContentHash(&bind.CallOpts{}, common.HexToAddress(contractAddress))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Initiaite removal tx
+	tx, err := instance.RemoveHostingContract(auth, common.HexToAddress(contractAddress) contractMainHash)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Contract Removal Tx Sent: %s", tx.Hash().Hex())
+	fmt.Println("\n")
+}
