@@ -18,3 +18,4 @@ go build -o build/bin/ethofs-cli
 ```shell
 ./build/bin/ethofs-cli -r -upload -path=testDir
 ```
+![Upload Example](ethofs-cli.png)
