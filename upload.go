@@ -15,9 +15,26 @@ import (
 
 var controllerContractAddress = "0xc38B47169950D8A28bC77a6Fa7467464f25ADAFc"
 
-func CalculateUploadCost(contractDuration uint32, uploadSize uint32) {
+func CalculateUploadCost(contractDuration uint32, uploadSize uint32) uint32 {
+	client, err := ethclient.Dial(rpcLocation)
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	address := common.HexToAddress(controllerContractAddress)
+	instance, err := NewEthoFSController(address, client)
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	// Get hosting cost
+	hostingCost, err := instance.GetNodeId(&bind.CallOpts{}, common.HexToAddress(nodeAddress))
+	if err != nil {
+		log.Fatal(err)
+	}
 	cost := ((uploadSize / 1048576) * hostingCost) * (contractDuration / 46522)
+	
+	return cost
 }
 
 func UploadData(key string, contractCost uint64, mainHash string, contractName string, contractDuration uint32, uploadSize uint32, contentHashString string, contentPathString string) {
