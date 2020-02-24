@@ -184,7 +184,7 @@ func RegisterAccount(key string, name string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Upload Tx Sent: %s", tx.Hash().Hex())
+		fmt.Printf("Registration Tx Sent: %s", tx.Hash().Hex())
 		fmt.Println("\n")
 	} else {
 		fmt.Println("ethoFS hosting account already registered")
@@ -266,4 +266,52 @@ func ListExistingContracts(key string) {
 
 		fmt.Printf("%s %s %s %d %d\n", contractName, contractAddress, contractMainHash, deploymentBlock, expirationBlock)
 	}
+}
+
+//ExtendContract initates the ethoFS contract extension tx
+func ExtendContract(key string, contractAddress string, duration uint32) {
+	client, err := ethclient.Dial(rpcLocation)
+	if err != nil {
+		log.Fatal(err)
+	}
+	privateKey, err := crypto.HexToECDSA(key)
+	if err != nil {
+        	log.Fatal(err)
+	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("error casting public key to ECDSA")
+	}
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+
+	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	auth := bind.NewKeyedTransactor(privateKey)
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.GasLimit = uint64(3000000) // in units
+	auth.GasPrice = gasPrice
+
+	address := common.HexToAddress(controllerContractAddress)
+	instance, err := NewEthoFSController(address, client)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Initiaite extension tx
+	tx, err := instance.ExtendContract(auth, common.HexToAddress(contractAddress), duration)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Contract Extension Tx Sent: %s", tx.Hash().Hex())
+	fmt.Println("\n")
 }
