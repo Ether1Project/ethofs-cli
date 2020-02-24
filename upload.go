@@ -2,16 +2,21 @@ package main
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"fmt"
+	"log"
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"log"
-	"time"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var controllerContractAddress = "0xc38B47169950D8A28bC77a6Fa7467464f25ADAFc"
 
-func UploadData(key string, contractCost uint64, mainHash string, contractName string, contractDuration uint64, uploadSize uint64, contentHashString string, contentPathString string) {
-	client, err := ethclient.Dial(rpcAddress)
+func UploadData(key string, contractCost uint64, mainHash string, contractName string, contractDuration uint32, uploadSize uint32, contentHashString string, contentPathString string) {
+	client, err := ethclient.Dial(rpcLocation)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,7 +48,7 @@ func UploadData(key string, contractCost uint64, mainHash string, contractName s
 	auth.GasPrice = gasPrice
 
 	address := common.HexToAddress(controllerContractAddress)
-	instance, err := NewControllerContract(address, client)
+	instance, err := NewEthoFSController(address, client)
 	if err != nil {
 		log.Fatal(err)
 	}
