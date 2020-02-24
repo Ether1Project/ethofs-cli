@@ -15,6 +15,11 @@ import (
 
 var controllerContractAddress = "0xc38B47169950D8A28bC77a6Fa7467464f25ADAFc"
 
+func CalculateUploadCost(contractDuration uint32, uploadSize uint32) {
+
+	cost := ((uploadSize / 1048576) * hostingCost) * (contractDuration / 46522)
+}
+
 func UploadData(key string, contractCost uint64, mainHash string, contractName string, contractDuration uint32, uploadSize uint32, contentHashString string, contentPathString string) {
 	client, err := ethclient.Dial(rpcLocation)
 	if err != nil {
