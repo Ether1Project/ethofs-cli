@@ -22,6 +22,12 @@ import (
 
 var controllerContractAddress = "0xc38B47169950D8A28bC77a6Fa7467464f25ADAFc"
 
+type ContractDetails struct {
+	Name string
+	Address common.Address
+	MainHash string
+}
+
 //WaitForTx returns on tx verification
 func WaitForTx(client *ethclient.Client, hash common.Hash) bool {
         s := spinner.StartNew("Waiting for transaction confirmation")
@@ -438,6 +444,13 @@ func RemoveContract(key string, contractAddress string) {
 	fmt.Printf("Contract Removal Tx Sent: %s", tx.Hash().Hex())
 
 	WaitForTx(client, tx.Hash())
+}
+
+func GetContractDetails(privateKey string, name string) ContractDetails {
+
+	contractDetails := ContractDetails{}
+
+	return contractDetails
 }
 
 func waitForTxConfirmations(client *ethclient.Client, txHash common.Hash, n uint64) (*types.Receipt, error) {

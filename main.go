@@ -137,6 +137,17 @@ func main() {
 
 		ListExistingContracts(privateKey)
 
+	} else if removeFlag && contractName != "" {
+
+		contractDetails := FindContractDetails(privateKey, contractName)
+		RemoveContract(privateKey, contractDetails.Address)
+
+	} else if extendFlag && contractName != "" && contractDuration > 0 {
+
+		contractDetails := FindContractDetails(privateKey, contractName)
+		cost := CalculateUploadCost(contractDuration, contractDetails.Size)
+		ExtendContract(privateKey, cost, contractDetails.Address, contractDuration)
+
 	}
 
 }

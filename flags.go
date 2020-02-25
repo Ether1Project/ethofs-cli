@@ -11,9 +11,13 @@ var inputPath string
 var privateKey string
 var contractName string
 var contractDuration int32
+var removeFlag bool
+var extendFlag bool
 
 func setFlags() {
 	flag.BoolVar(&uploadFlag, "upload", false, "Upload to ethoFS")
+	flag.BoolVar(&removeFlag, "remove", false, "Remove ethofs Hosting Contract")
+	flag.BoolVar(&removeFlag, "extend", false, "Extend ethofs Hosting Contract")
 	flag.BoolVar(&listFlag, "list", false, "List ethoFS Upload Contracts")
 	flag.BoolVar(&recursiveFlag, "r", false, "Recursive Upload")
 	flag.StringVar(&inputPath, "path", "", "Data Upload Path")
