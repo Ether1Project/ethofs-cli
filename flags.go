@@ -5,17 +5,25 @@ import (
 )
 
 var uploadFlag bool
+var listFlag bool
 var recursiveFlag bool
 var inputPath string
+var privateKey string
+var contractName string
+var contractDuration int32
 
 func setFlags() {
-//	uploadPtr := flag.Bool("upload", false, "Upload to ethoFS")
-//	recursivePtr := flag.Bool("r", false, "Recursive upload")
 	flag.BoolVar(&uploadFlag, "upload", false, "Upload to ethoFS")
-	flag.BoolVar(&recursiveFlag, "r", false, "Recursive upload")
-	flag.StringVar(&inputPath, "path", "", "Data upload path")
+	flag.BoolVar(&listFlag, "list", false, "List ethoFS Upload Contracts")
+	flag.BoolVar(&recursiveFlag, "r", false, "Recursive Upload")
+	flag.StringVar(&inputPath, "path", "", "Data Upload Path")
+	flag.StringVar(&privateKey, "key", "", "Private Key")
+	flag.StringVar(&contractName, "name", "", "Hosting Contract Name")
 
-//	uploadFlag = *uploadPtr
-//	recursiveFlag = *recursivePtr
+	duration := uint(0)
+	flag.UintVar(&duration, "blocks", 0, "Hosting Contract Duration (In Blocks)")
+
 	flag.Parse()
+
+	contractDuration = int32(duration)
 }

@@ -3,21 +3,41 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"fmt"
 	"log"
 	"math/big"
+	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/janeczku/go-spinner"
 )
 
 var controllerContractAddress = "0xc38B47169950D8A28bC77a6Fa7467464f25ADAFc"
 
-// CheckAccountBalance verifies sufficient balance at specified address
+//WaitForTx returns on tx verification
+func WaitForTx(client *ethclient.Client, hash common.Hash) bool {
+        s := spinner.StartNew("Waiting for transaction confirmation")
+
+	_, err := waitForTxConfirmations(client, hash, 1)
+	if err != nil {
+        	s.Stop()
+	        fmt.Println("X Waiting for transaction confirmation: Failed")
+		log.Fatal(err)
+	}
+        s.Stop()
+        fmt.Println("✓ Waiting for transaction confirmation: Confirmed")
+	return true
+}
+
+//CheckAccountBalance verifies sufficient balance at specified address
 func CheckAccountBalance(address common.Address, amount *big.Int) bool {
 	client, err := ethclient.Dial(rpcLocation)
 	if err != nil {
@@ -36,7 +56,10 @@ func CheckAccountBalance(address common.Address, amount *big.Int) bool {
 }
 
 //CalculateUploadCost returns the cost to upload to ethoFS based on provided upload size
-func CalculateUploadCost(contractDuration int32, uploadSize int32) int32 {
+func CalculateUploadCost(contractDuration int32, uploadSize int64) *big.Int {
+
+/*	fmt.Printf("\nInitiating Hosting Cost Calculation - Duration: %d Size: %d\n", contractDuration, uploadSize)
+
 	client, err := ethclient.Dial(rpcLocation)
 	if err != nil {
 		log.Fatal(err)
@@ -49,11 +72,19 @@ func CalculateUploadCost(contractDuration int32, uploadSize int32) int32 {
 	}
 
 	// Get hosting cost
-	hostingCost, err := instance.HostingCost(&bind.CallOpts{})
+	//hostingCost, err := instance.HostingCost(&bind.CallOpts{})
+	hostingCost, err := instance.HostingCost()
 	if err != nil {
 		log.Fatal(err)
 	}
-	cost := ((uploadSize / 1048576) * int32(hostingCost.Int64())) * (contractDuration / 46522)
+*/
+	hostingCost := big.NewInt(1e+18)
+	num1 := new(big.Int).Mul(big.NewInt(uploadSize), hostingCost)
+	num2 := new(big.Int).Mul(num1, big.NewInt(int64(contractDuration)))
+	num3 := new(big.Int).Div(num2, big.NewInt(1048576))
+	cost := new(big.Int).Div(num3, big.NewInt(46522))
+
+	//fmt.Printf("Hosting Cost Calculated: %d\n", cost)
 
 	return cost
 }
@@ -81,7 +112,12 @@ func CheckAccountExistence(accountAddress common.Address) bool {
 }
 
 //UploadData initiates the ethoFS upload tx
-func UploadData(key string, contractCost int32, mainHash string, contractName string, contractDuration uint32, uploadSize uint32, contentHashString string, contentPathString string) {
+func UploadData(key string, contractCost *big.Int, mainHash string, contractName string, contractDuration uint32, uploadSize uint32, contentHashString string, contentPathString string) {
+
+	//fmt.Printf("Upload Data - Cost: %d Hash: %s Name: %s Duration: %d Size: %d HashString: %s PathString: %s\n", contractCost, mainHash, contractName, contractDuration, uploadSize, contentHashString, contentPathString)
+
+        s := spinner.StartNew("Sending ethoFS upload transaction")
+
 	client, err := ethclient.Dial(rpcLocation)
 	if err != nil {
 		log.Fatal(err)
@@ -99,7 +135,7 @@ func UploadData(key string, contractCost int32, mainHash string, contractName st
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
 
 	if CheckAccountExistence(fromAddress) {
-		if CheckAccountBalance(fromAddress, new(big.Int).Mul(big.NewInt(int64(contractCost)), big.NewInt(1e+18))) {
+		if CheckAccountBalance(fromAddress, contractCost) {
 			nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
 			if err != nil {
 				log.Fatal(err)
@@ -112,7 +148,7 @@ func UploadData(key string, contractCost int32, mainHash string, contractName st
 
 			auth := bind.NewKeyedTransactor(privateKey)
 			auth.Nonce = big.NewInt(int64(nonce))
-			auth.Value = new(big.Int).Mul(big.NewInt(int64(contractCost)), big.NewInt(1e+18)) // in wei
+			auth.Value = contractCost // in wei
 			auth.GasLimit = uint64(3000000) // in units
 			auth.GasPrice = gasPrice
 
@@ -127,8 +163,15 @@ func UploadData(key string, contractCost int32, mainHash string, contractName st
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Printf("Upload Tx Sent: %s", tx.Hash().Hex())
-			fmt.Println("\n")
+
+		        s.Stop()
+        		fmt.Println("✓ Sending ethoFS upload transaction: Complete")
+			//fmt.Printf("Upload Tx Sent: %s", tx.Hash().Hex())
+			//fmt.Println("\n")
+
+			// Wait for tx confirmation
+			WaitForTx(client, tx.Hash())
+
 		} else {
 			fmt.Println("Insufficient balance for upload")
 			log.Fatal("\n")
@@ -141,6 +184,8 @@ func UploadData(key string, contractCost int32, mainHash string, contractName st
 
 //RegisterAccount initates the ethoFS registration tx
 func RegisterAccount(key string, name string) {
+	s := spinner.StartNew("Sending ethoFS registration transaction")
+
 	client, err := ethclient.Dial(rpcLocation)
 	if err != nil {
 		log.Fatal(err)
@@ -184,9 +229,16 @@ func RegisterAccount(key string, name string) {
 		if err != nil {
 			log.Fatal(err)
 		}
+	        s.Stop()
+        	fmt.Println("✓ Sending ethoFS registration transaction: Completed")
 		fmt.Printf("Registration Tx Sent: %s", tx.Hash().Hex())
-		fmt.Println("\n")
+
+		WaitForTx(client, tx.Hash())
+
 	} else {
+	        s.Stop()
+        	fmt.Println("X Sending ethoFS registration transaction: Failed")
+
 		fmt.Println("ethoFS hosting account already registered")
 		log.Fatal("\n")
 	}
@@ -194,6 +246,7 @@ func RegisterAccount(key string, name string) {
 
 //ListExistingContracts lists active ethoFS hosting contracts for current user
 func ListExistingContracts(key string) {
+
 	client, err := ethclient.Dial(rpcLocation)
 	if err != nil {
 		log.Fatal(err)
@@ -229,8 +282,8 @@ func ListExistingContracts(key string) {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("\nExisting Hosting Contracts - %s", name)
-	fmt.Println("Contract Name     Contract Address     Contract Hash      Deployment Block      Expiration Block")
+	fmt.Printf("\nExisting Hosting Contracts - %s\n", name)
+	fmt.Println("Contract Name,Contract Address,Contract Hash,Deployment Block,Expiration Block")
 
 	for i := uint32(0); i < count; i++ {
 
@@ -264,12 +317,16 @@ func ListExistingContracts(key string) {
 			log.Fatal(err)
 		}
 
-		fmt.Printf("%s %s %s %d %d\n", contractName, contractAddress, contractMainHash, deploymentBlock, expirationBlock)
+		if deploymentBlock.Int64() > 0 && expirationBlock.Int64() > 0 {
+			fmt.Printf("%s,%s,%s,%d,%d\n", contractName, contractAddress.String(), contractMainHash, deploymentBlock, expirationBlock)
+		}
 	}
 }
 
 //ExtendContract initates the ethoFS contract extension tx
-func ExtendContract(key string, contractAddress string, duration uint32) {
+func ExtendContract(key string, extensionCost *big.Int, contractAddress string, duration uint32) {
+	s := spinner.StartNew("Sending ethoFS contract extension transaction")
+
 	client, err := ethclient.Dial(rpcLocation)
 	if err != nil {
 		log.Fatal(err)
@@ -298,6 +355,7 @@ func ExtendContract(key string, contractAddress string, duration uint32) {
 
 	auth := bind.NewKeyedTransactor(privateKey)
 	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = extensionCost // in wei
 	auth.GasLimit = uint64(3000000) // in units
 	auth.GasPrice = gasPrice
 
@@ -312,12 +370,19 @@ func ExtendContract(key string, contractAddress string, duration uint32) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+        s.Stop()
+        fmt.Println("✓ Sending ethoFS contract extension transaction: Completed")
+
 	fmt.Printf("Contract Extension Tx Sent: %s", tx.Hash().Hex())
-	fmt.Println("\n")
+
+	WaitForTx(client, tx.Hash())
 }
 
 //RemoveContract initates the ethoFS contract removal tx
 func RemoveContract(key string, contractAddress string) {
+	s := spinner.StartNew("Sending ethoFS contract removal transaction")
+
 	client, err := ethclient.Dial(rpcLocation)
 	if err != nil {
 		log.Fatal(err)
@@ -362,10 +427,70 @@ func RemoveContract(key string, contractAddress string) {
 	}
 
 	// Initiaite removal tx
-	tx, err := instance.RemoveHostingContract(auth, common.HexToAddress(contractAddress) contractMainHash)
+	tx, err := instance.RemoveHostingContract(auth, common.HexToAddress(contractAddress), contractMainHash)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+        s.Stop()
+        fmt.Println("✓ Sending ethoFS contract removal transaction: Completed")
+
 	fmt.Printf("Contract Removal Tx Sent: %s", tx.Hash().Hex())
-	fmt.Println("\n")
+
+	WaitForTx(client, tx.Hash())
+}
+
+func waitForTxConfirmations(client *ethclient.Client, txHash common.Hash, n uint64) (*types.Receipt, error) {
+	rpcTimeout := 120 * time.Second
+	var (
+		receipt    *types.Receipt
+		startBlock *types.Block
+		err        error
+	)
+
+	for i := 0; i < 90; i++ {
+		ctx, _ := context.WithTimeout(context.Background(), rpcTimeout)
+		receipt, err = client.TransactionReceipt(ctx, txHash)
+		if err != nil && err != ethereum.NotFound {
+			return nil, err
+		}
+		if receipt != nil {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+
+	if receipt == nil {
+		return nil, ethereum.NotFound
+	}
+
+	ctx, _ := context.WithTimeout(context.Background(), rpcTimeout)
+	if startBlock, err = client.BlockByNumber(ctx, nil); err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < 90; i++ {
+		ctx, _ := context.WithTimeout(context.Background(), rpcTimeout)
+		currentBlock, err := client.BlockByNumber(ctx, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		if startBlock.NumberU64()+n >= currentBlock.NumberU64() {
+			ctx, _ := context.WithTimeout(context.Background(), rpcTimeout)
+			if checkReceipt, err := client.TransactionReceipt(ctx, txHash); checkReceipt != nil {
+				if bytes.Compare(receipt.PostState, checkReceipt.PostState) == 0 {
+					return receipt, nil
+				} else { // chain reorg
+					waitForTxConfirmations(client, txHash, n)
+				}
+			} else {
+				return nil, err
+			}
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return nil, ethereum.NotFound
 }
