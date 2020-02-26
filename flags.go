@@ -15,6 +15,8 @@ var removeFlag bool
 var extendFlag bool
 var replaceFlag bool
 var backupFlag bool
+var registerFlag bool
+var ethofsUsername string
 
 func setFlags() {
 	flag.BoolVar(&uploadFlag, "upload", false, "Upload to ethoFS")
@@ -23,10 +25,12 @@ func setFlags() {
 	flag.BoolVar(&replaceFlag, "replace", false, "Replace ethofs Hosting Contract (Will Automatically Replace Same Named Contract if Existing)")
 	flag.BoolVar(&backupFlag, "backup", false, "Backup Data to ethofs Network (Will Automatically Replace Same Named Contract if Existing)")
 	flag.BoolVar(&listFlag, "list", false, "List ethoFS Upload Contracts")
+	flag.BoolVar(&registerFlag, "register", false, "Register New ethoFS Address/Account")
 	flag.BoolVar(&recursiveFlag, "r", false, "Recursive Upload")
 	flag.StringVar(&inputPath, "path", "", "Data Upload Path")
 	flag.StringVar(&privateKey, "key", "", "Private Key")
 	flag.StringVar(&contractName, "name", "", "Hosting Contract Name")
+	flag.StringVar(&ethofsUsername, "username", "", "ethoFS Registration Username")
 
 	duration := uint(0)
 	flag.UintVar(&duration, "blocks", 0, "Hosting Contract Duration (In Blocks)")

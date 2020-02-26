@@ -146,12 +146,12 @@ func main() {
 	} else if extendFlag && contractName != "" && contractDuration > 0 {
 
 		contractDetails := GetContractDetails(privateKey, contractName)
-		cost := CalculateUploadCost(contractDuration, contractDetails.Size)
+		cost := CalculateUploadCost(contractDuration, int64(contractDetails.Size))
 		ExtendContract(privateKey, cost, contractDetails.Address, contractDuration)
 
 	} else if (replaceFlag || backupFlag) && contractName != "" && inputPath != "" && contractDuration > 0 {
 
-		contractDetails := FindContractDetails(privateKey, contractName)
+		contractDetails := GetContractDetails(privateKey, contractName)
 		nullContractDetails := ContractDetails{}
 		if contractDetails != nullContractDetails {
 			RemoveContract(privateKey, contractDetails.Address)
@@ -268,5 +268,13 @@ func main() {
 		time.Sleep(5 * time.Second)
 		s.Stop()
 		fmt.Println("✓ Stopping ethoFS Node: Completed")
+	} else if registerFlag && ethofsUsername != "" {
+
+		s := spinner.StartNew("Initiating ethoFS Registration")
+		time.Sleep(2 * time.Second)
+		s.Stop()
+		fmt.Println("✓ StInitiating ethoFS Registration: Completed")
+		RegisterAccount(privateKey, ethofsUsername)
+
 	}
 }

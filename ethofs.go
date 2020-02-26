@@ -26,6 +26,7 @@ type ContractDetails struct {
 	Name string
 	Address common.Address
 	MainHash string
+	Size uint32
 }
 
 //WaitForTx returns on tx verification
@@ -330,7 +331,7 @@ func ListExistingContracts(key string) {
 }
 
 //ExtendContract initates the ethoFS contract extension tx
-func ExtendContract(key string, extensionCost *big.Int, contractAddress string, duration uint32) {
+func ExtendContract(key string, extensionCost *big.Int, contractAddress common.Address, duration int32) {
 	s := spinner.StartNew("Sending ethoFS contract extension transaction")
 
 	client, err := ethclient.Dial(rpcLocation)
@@ -372,7 +373,7 @@ func ExtendContract(key string, extensionCost *big.Int, contractAddress string, 
 	}
 
 	// Initiaite extension tx
-	tx, err := instance.ExtendContract(auth, common.HexToAddress(contractAddress), duration)
+	tx, err := instance.ExtendContract(auth, contractAddress, uint32(duration))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -520,9 +521,17 @@ func GetContractDetails(key string, name string) ContractDetails {
 				if err != nil {
 					log.Fatal(err)
 				}
+
+				// Get hosting contract storage used
+				contractStorageUsed, err := instance.GetHostingContractStorageUsed(&bind.CallOpts{}, contractAddress)
+				if err != nil {
+					log.Fatal(err)
+				}
+
 				contractDetails.Name = contractName
 				contractDetails.Address = contractAddress
 				contractDetails.MainHash = contractMainHash
+				contractDetails.Size = contractStorageUsed
 				fmt.Printf("Existing Contract Found - Name: %s Address: %s, Hash: %s\n", contractName, contractAddress.String(), contractMainHash)
 
 			}
