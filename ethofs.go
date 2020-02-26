@@ -386,7 +386,7 @@ func ExtendContract(key string, extensionCost *big.Int, contractAddress string, 
 }
 
 //RemoveContract initates the ethoFS contract removal tx
-func RemoveContract(key string, contractAddress string) {
+func RemoveContract(key string, contractAddress common.Address) {
 	s := spinner.StartNew("Sending ethoFS contract removal transaction")
 
 	client, err := ethclient.Dial(rpcLocation)
@@ -427,13 +427,13 @@ func RemoveContract(key string, contractAddress string) {
 	}
 
 	// Get hosting contract main hash
-	contractMainHash, err := instance.GetMainContentHash(&bind.CallOpts{}, common.HexToAddress(contractAddress))
+	contractMainHash, err := instance.GetMainContentHash(&bind.CallOpts{}, contractAddress)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Initiaite removal tx
-	tx, err := instance.RemoveHostingContract(auth, common.HexToAddress(contractAddress), contractMainHash)
+	tx, err := instance.RemoveHostingContract(auth, contractAddress, contractMainHash)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -446,10 +446,89 @@ func RemoveContract(key string, contractAddress string) {
 	WaitForTx(client, tx.Hash())
 }
 
-func GetContractDetails(privateKey string, name string) ContractDetails {
+func GetContractDetails(key string, name string) ContractDetails {
 
 	contractDetails := ContractDetails{}
 
+	client, err := ethclient.Dial(rpcLocation)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	privateKey, err := crypto.HexToECDSA(key)
+	if err != nil {
+        	log.Fatal(err)
+	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("error casting public key to ECDSA")
+	}
+
+	accountAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+
+	address := common.HexToAddress(controllerContractAddress)
+	instance, err := NewEthoFSController(address, client)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Get account user name
+	/*name, err := instance.GetUserAccountName(&bind.CallOpts{}, accountAddress)
+	if err != nil {
+		log.Fatal(err)
+	}*/
+
+	// Get existing contract count
+	count, err := instance.GetUserAccountTotalContractCount(&bind.CallOpts{}, accountAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for i := uint32(0); i < count; i++ {
+
+		// Get hosting contract address
+		contractAddress, err := instance.GetHostingContractAddress(&bind.CallOpts{}, accountAddress, big.NewInt(int64(i)))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Get hosting contract name
+		contractName, err := instance.GetHostingContractName(&bind.CallOpts{}, contractAddress)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if contractName == name {
+
+			// Get hosting contract deployed block height
+			deploymentBlock, err := instance.GetHostingContractDeployedBlockHeight(&bind.CallOpts{}, contractAddress)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			// Get hosting contract expiration block height
+			expirationBlock, err := instance.GetHostingContractExpirationBlockHeight(&bind.CallOpts{}, contractAddress)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			if deploymentBlock.Int64() > 0 && expirationBlock.Int64() > 0 {
+
+				// Get hosting contract main hash
+				contractMainHash, err := instance.GetMainContentHash(&bind.CallOpts{}, contractAddress)
+				if err != nil {
+					log.Fatal(err)
+				}
+				contractDetails.Name = contractName
+				contractDetails.Address = contractAddress
+				contractDetails.MainHash = contractMainHash
+				fmt.Printf("Existing Contract Found - Name: %s Address: %s, Hash: %s\n", contractName, contractAddress.String(), contractMainHash)
+
+			}
+		}
+
+	}
 	return contractDetails
 }
 
