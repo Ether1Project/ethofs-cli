@@ -5,14 +5,9 @@ Command-line Interface/Access to The ethoFS Upload System/Network
 
 ```shell
 build/bin/ethofs-cli-windows
-build/bin/ethofs-cli-macos
 build/bin/ethofs-cli-linux
 ```
-## Building the source
 
-```shell
-go build -o build/bin/ethofs-cli-linux
-```
 ## Running pre-built binary (register new ethoFS account) (Work-in-Progress)
 
 ```shell
