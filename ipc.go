@@ -1,3 +1,7 @@
+// Copyright 2020 The Etho.Black Development Team
+
+package main
+
 import (
         "errors"
         "net"

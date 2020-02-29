@@ -276,5 +276,10 @@ func main() {
 		fmt.Println("✓ StInitiating ethoFS Registration: Completed")
 		RegisterAccount(privateKey, ethofsUsername)
 
+	} else if ipcFlag {
+
+		// Deploy IPC endpoint to wait for requests & respond
+		ethofsIpc()
+
 	}
 }

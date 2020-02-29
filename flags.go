@@ -17,8 +17,10 @@ var replaceFlag bool
 var backupFlag bool
 var registerFlag bool
 var ethofsUsername string
+var ipcFlag bool
 
 func setFlags() {
+	flag.BoolVar(&ipcFlag, "ipc", false, "Launch IPC Endpoint - Abilty To Respond to Json Requests")
 	flag.BoolVar(&uploadFlag, "upload", false, "Upload to ethoFS")
 	flag.BoolVar(&removeFlag, "remove", false, "Remove ethofs Hosting Contract")
 	flag.BoolVar(&removeFlag, "extend", false, "Extend ethofs Hosting Contract")
