@@ -190,21 +190,21 @@ func UploadData(key string, contractCost *big.Int, mainHash string, contractName
 }
 
 //RegisterAccount initates the ethoFS registration tx
-func RegisterAccount(key string, name string) {
+func RegisterAccount(key string, name string) (bool, error) {
 	s := spinner.StartNew("Sending ethoFS registration transaction")
 
 	client, err := ethclient.Dial(rpcLocation)
 	if err != nil {
-		log.Fatal(err)
+		return false, err
 	}
 	privateKey, err := crypto.HexToECDSA(key)
 	if err != nil {
-        	log.Fatal(err)
+		return false, err
 	}
 	publicKey := privateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
-		log.Fatal("error casting public key to ECDSA")
+		return false, fmt.Errorf("error casting public key to ECDSA")
 	}
 
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
@@ -212,12 +212,12 @@ func RegisterAccount(key string, name string) {
 	if !CheckAccountExistence(fromAddress) {
 		nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
 		if err != nil {
-			log.Fatal(err)
+			return false, err
 		}
 
 		gasPrice, err := client.SuggestGasPrice(context.Background())
 		if err != nil {
-			log.Fatal(err)
+			return false, err
 		}
 
 		auth := bind.NewKeyedTransactor(privateKey)
@@ -228,13 +228,13 @@ func RegisterAccount(key string, name string) {
 		address := common.HexToAddress(controllerContractAddress)
 		instance, err := NewEthoFSController(address, client)
 		if err != nil {
-			log.Fatal(err)
+			return false, err
 		}
 
 		// Initiaite registration tx
 		tx, err := instance.AddNewUserPublic(auth, name)
 		if err != nil {
-			log.Fatal(err)
+			return false, err
 		}
 	        s.Stop()
         	fmt.Println("✓ Sending ethoFS registration transaction: Completed")
@@ -247,26 +247,29 @@ func RegisterAccount(key string, name string) {
         	fmt.Println("X Sending ethoFS registration transaction: Failed")
 
 		fmt.Println("ethoFS hosting account already registered")
-		log.Fatal("\n")
+		return false, fmt.Errorf("ethofs hosting account already registered")
 	}
+	return true, nil
 }
 
 //ListExistingContracts lists active ethoFS hosting contracts for current user
-func ListExistingContracts(key string) {
+func ListExistingContracts(key string) ([]ContractDetails, error) {
+
+	var contractDetails []ContractDetails
 
 	client, err := ethclient.Dial(rpcLocation)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	privateKey, err := crypto.HexToECDSA(key)
 	if err != nil {
-        	log.Fatal(err)
+		return nil, err
 	}
 	publicKey := privateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
-		log.Fatal("error casting public key to ECDSA")
+		return nil, fmt.Errorf("error casting public key to ECDSA")
 	}
 
 	accountAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
@@ -274,19 +277,19 @@ func ListExistingContracts(key string) {
 	address := common.HexToAddress(controllerContractAddress)
 	instance, err := NewEthoFSController(address, client)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	// Get account user name
 	name, err := instance.GetUserAccountName(&bind.CallOpts{}, accountAddress)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	// Get existing contract count
 	count, err := instance.GetUserAccountTotalContractCount(&bind.CallOpts{}, accountAddress)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	fmt.Printf("\nExisting Hosting Contracts - %s\n", name)
@@ -297,37 +300,48 @@ func ListExistingContracts(key string) {
 		// Get hosting contract address
 		contractAddress, err := instance.GetHostingContractAddress(&bind.CallOpts{}, accountAddress, big.NewInt(int64(i)))
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 
 		// Get hosting contract deployed block height
 		deploymentBlock, err := instance.GetHostingContractDeployedBlockHeight(&bind.CallOpts{}, contractAddress)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 
 		// Get hosting contract expiration block height
 		expirationBlock, err := instance.GetHostingContractExpirationBlockHeight(&bind.CallOpts{}, contractAddress)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 
 		// Get hosting contract name
 		contractName, err := instance.GetHostingContractName(&bind.CallOpts{}, contractAddress)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 
 		// Get hosting contract main hash
 		contractMainHash, err := instance.GetMainContentHash(&bind.CallOpts{}, contractAddress)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
+
+		// Get hosting contract storage used
+		contractStorageUsed, err := instance.GetHostingContractStorageUsed(&bind.CallOpts{}, contractAddress)
+		if err != nil {
+			return nil, err
+		}
+
+		contractDetail := ContractDetails{Address: contractAddress, Name: contractName, MainHash: contractMainHash, Size: contractStorageUsed}
+		contractDetails = append(contractDetails, contractDetail)
 
 		if deploymentBlock.Int64() > 0 && expirationBlock.Int64() > 0 {
 			fmt.Printf("%s,%s,%s,%d,%d\n", contractName, contractAddress.String(), contractMainHash, deploymentBlock, expirationBlock)
 		}
 	}
+
+	return contractDetails, nil
 }
 
 //ExtendContract initates the ethoFS contract extension tx

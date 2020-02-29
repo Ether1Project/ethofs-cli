@@ -21,55 +21,25 @@ func main() {
 		os.Exit(2) // Exit on no private key
 	}
 
+	s := spinner.StartNew("Initializing ethofs-cli")
+	time.Sleep(1 * time.Second)
+	s.Stop()
+	fmt.Println("✓ Initializing ethoFSfs-cli: Completed")
+
 	if uploadFlag {
-		// Start ethofs node initialization
-		s := spinner.StartNew("Initializing ethoFS node for upload")
-		time.Sleep(3 * time.Second)
-		s.Stop()
-		fmt.Println("✓ Initializing ethoFS node for upload: Completed")
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		// Spawn a node using a temporary path, creating a temporary repo for the run
-		s = spinner.StartNew("Initializing ethoFS data upload repo")
-		time.Sleep(3 * time.Second)
-		s.Stop()
-		fmt.Println("✓ Initializing ethoFS data upload repo: Completed")
-
-		s = spinner.StartNew("Finalizing ethoFS node deployment")
-		ipfs, err := spawnEphemeral(ctx)
+		// Initialize ethoFS Node
+		ipfs, err := initializeEthofsNode(ctx)
 		if err != nil {
-			panic(fmt.Errorf("failed to spawn ephemeral node: %s", err))
+			panic(fmt.Errorf("Error while initializing ethoFS node: %s", err))
 		}
-		s.Stop()
-		fmt.Println("✓ Finalizing ethoFS node deployment: Completed")
-		fmt.Println("✓ ethoFS Node is Running")
-
-		s = spinner.StartNew("Syncing ethoFS bootnodes with ETHO network contract")
-
-		bootstrapNodes, err := GetBootnodeContractValues()
-		if err != nil {
-			panic(fmt.Errorf("failed to sync bootnodes with ether-1 network: %s", err))
-		}
-		time.Sleep(3 * time.Second)
-		s.Stop()
-		fmt.Println("✓ Syncing ethoFS bootnodes with ETHO network contract: Completed")
-
-		s = spinner.StartNew("Waiting for ethoFS bootnode connections")
-		connectedPeers,_ := connectToPeers(ctx, ipfs, bootstrapNodes)
-		time.Sleep(3 * time.Second)
-		s.Stop()
-		if connectedPeers > 1 {
-			fmt.Println("✓ Waiting for ethoFS bootnode connections: Completed")
-		} else {
-			panic(fmt.Errorf("failed to connect to ethoFS bootnodes"))
-		}
-		// ethoFS node is completely initialized by now - full swarm
 
 		if recursiveFlag && inputPath != "" && contractDuration > 0 {
 
-			s = spinner.StartNew("Initializing ethoFS data upload")
+			s := spinner.StartNew("Initializing ethoFS data upload")
 
 			uploadDirectory, uploadSize, err := getUnixfsNode(inputPath)
 			if err != nil {
@@ -136,7 +106,10 @@ func main() {
 
 	} else if listFlag {
 
-		ListExistingContracts(privateKey)
+		_, err := ListExistingContracts(privateKey)
+		if err != nil {
+			panic(fmt.Errorf("Error finding existing contracts: %s", err))
+		}
 
 	} else if removeFlag && contractName != "" {
 
