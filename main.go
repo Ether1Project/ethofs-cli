@@ -53,10 +53,19 @@ func main() {
 			}
 
 			hash := strings.Split(cidDirectory.String(), "/")[2]
-			contractCost := CalculateUploadCost(contractDuration, uploadSize)
+			contractCost, err := CalculateUploadCost(contractDuration, uploadSize)
+			if err != nil {
+				s.Stop()
+				panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
+			}
+
 			contentHashString := "ethoFSPinningChannel_alpha11:" + hash
 			contentPathString := "ethoFSPinningChannel_alpha11:/"
-			UploadData(privateKey, contractCost, hash, contractName, uint32(contractDuration), uint32(uploadSize), contentHashString, contentPathString)
+			_, err = UploadData(privateKey, contractCost, hash, contractName, uint32(contractDuration), uint32(uploadSize), contentHashString, contentPathString)
+			if err != nil {
+				s.Stop()
+				panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
+			}
 
 			if verifyUpload(ctx, ipfs, cidDirectory) {
 				s.Stop()
@@ -83,10 +92,19 @@ func main() {
 			}
 
 			hash := strings.Split(cidFile.String(), "/")[2]
-			contractCost := CalculateUploadCost(contractDuration, uploadSize)
+			contractCost, err := CalculateUploadCost(contractDuration, uploadSize)
+			if err != nil {
+				s.Stop()
+				panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
+			}
+
 			contentHashString := "ethoFSPinningChannel_alpha11:" + hash
 			contentPathString := "ethoFSPinningChannel_alpha11:/"
-			UploadData(privateKey, contractCost, hash, contractName, uint32(contractDuration), uint32(uploadSize), contentHashString, contentPathString)
+			_, err = UploadData(privateKey, contractCost, hash, contractName, uint32(contractDuration), uint32(uploadSize), contentHashString, contentPathString)
+			if err != nil {
+				s.Stop()
+				panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
+			}
 
 			if verifyUpload(ctx, ipfs, cidFile) {
 				s.Stop()
@@ -113,21 +131,53 @@ func main() {
 
 	} else if removeFlag && contractName != "" {
 
-		contractDetails := GetContractDetails(privateKey, contractName)
-		RemoveContract(privateKey, contractDetails.Address)
+		contractDetails, err := GetContractDetails(privateKey, contractName)
+		if err != nil {
+			s.Stop()
+			panic(fmt.Errorf("Error removing ethoFS contract: %s", err))
+		}
+
+		_, err = RemoveContract(privateKey, contractDetails.Address)
+		if err != nil {
+			s.Stop()
+			panic(fmt.Errorf("Error removing ethoFS contract: %s", err))
+		}
 
 	} else if extendFlag && contractName != "" && contractDuration > 0 {
 
-		contractDetails := GetContractDetails(privateKey, contractName)
-		cost := CalculateUploadCost(contractDuration, int64(contractDetails.Size))
-		ExtendContract(privateKey, cost, contractDetails.Address, contractDuration)
+		contractDetails, err := GetContractDetails(privateKey, contractName)
+		if err != nil {
+			s.Stop()
+			panic(fmt.Errorf("Error extending ethoFS contract: %s", err))
+		}
+
+		cost, err := CalculateUploadCost(contractDuration, int64(contractDetails.Size))
+		if err != nil {
+			s.Stop()
+			panic(fmt.Errorf("Error extending ethoFS contract: %s", err))
+		}
+
+		_, err = ExtendContract(privateKey, cost, contractDetails.Address, contractDuration)
+		if err != nil {
+			s.Stop()
+			panic(fmt.Errorf("Error extending ethoFS contract: %s", err))
+		}
 
 	} else if (replaceFlag || backupFlag) && contractName != "" && inputPath != "" && contractDuration > 0 {
 
-		contractDetails := GetContractDetails(privateKey, contractName)
+		contractDetails, err := GetContractDetails(privateKey, contractName)
+		if err != nil {
+			s.Stop()
+			panic(fmt.Errorf("Error replacing ethoFS contract: %s", err))
+		}
+
 		nullContractDetails := ContractDetails{}
 		if contractDetails != nullContractDetails {
-			RemoveContract(privateKey, contractDetails.Address)
+			_, err := RemoveContract(privateKey, contractDetails.Address)
+			if err != nil {
+				s.Stop()
+				panic(fmt.Errorf("Error replacing ethoFS contract: %s", err))
+			}
 		}
 
 		// Start ethofs node initialization
@@ -191,10 +241,19 @@ func main() {
 			}
 
 			hash := strings.Split(cidDirectory.String(), "/")[2]
-			contractCost := CalculateUploadCost(contractDuration, uploadSize)
+			contractCost, err := CalculateUploadCost(contractDuration, uploadSize)
+			if err != nil {
+				s.Stop()
+				panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
+			}
+
 			contentHashString := "ethoFSPinningChannel_alpha11:" + hash
 			contentPathString := "ethoFSPinningChannel_alpha11:/"
-			UploadData(privateKey, contractCost, hash, contractName, uint32(contractDuration), uint32(uploadSize), contentHashString, contentPathString)
+			_, err = UploadData(privateKey, contractCost, hash, contractName, uint32(contractDuration), uint32(uploadSize), contentHashString, contentPathString)
+			if err != nil {
+				s.Stop()
+				panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
+			}
 
 			if verifyUpload(ctx, ipfs, cidDirectory) {
 				s.Stop()
@@ -221,10 +280,19 @@ func main() {
 			}
 
 			hash := strings.Split(cidFile.String(), "/")[2]
-			contractCost := CalculateUploadCost(contractDuration, uploadSize)
+			contractCost, err := CalculateUploadCost(contractDuration, uploadSize)
+			if err != nil {
+				s.Stop()
+				panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
+			}
+
 			contentHashString := "ethoFSPinningChannel_alpha11:" + hash
 			contentPathString := "ethoFSPinningChannel_alpha11:/"
-			UploadData(privateKey, contractCost, hash, contractName, uint32(contractDuration), uint32(uploadSize), contentHashString, contentPathString)
+			_, err = UploadData(privateKey, contractCost, hash, contractName, uint32(contractDuration), uint32(uploadSize), contentHashString, contentPathString)
+			if err != nil {
+				s.Stop()
+				panic(fmt.Errorf("Error uploading data to ethoFS: %s", err))
+			}
 
 			if verifyUpload(ctx, ipfs, cidFile) {
 				s.Stop()
@@ -247,7 +315,11 @@ func main() {
 		time.Sleep(2 * time.Second)
 		s.Stop()
 		fmt.Println("✓ StInitiating ethoFS Registration: Completed")
-		RegisterAccount(privateKey, ethofsUsername)
+		_, err := RegisterAccount(privateKey, ethofsUsername)
+		if err != nil {
+			s.Stop()
+			panic(fmt.Errorf("Error registering ethoFS account: %s", err))
+		}
 
 	} else if ipcFlag {
 
