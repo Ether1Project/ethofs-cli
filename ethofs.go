@@ -22,10 +22,10 @@ import (
 var controllerContractAddress = "0xc38B47169950D8A28bC77a6Fa7467464f25ADAFc"
 
 type ContractDetails struct {
-	Name string
-	Address common.Address
-	MainHash string
-	Size uint32
+	Name string		`json:"name"`
+	Address common.Address  `json:"address"`
+	MainHash string         `json:"mainhash"`
+	Size uint32             `json;"size"`
 }
 
 //WaitForTx returns on tx verification

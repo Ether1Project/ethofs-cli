@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
         "errors"
 	"fmt"
         "net"
@@ -50,12 +51,18 @@ func (s *EthofsService) Extend(name string, duration int32, key string) (string,
         return "Contract Successfully Extended: " + name, nil
 }
 
-func (s *EthofsService) List(key string) ([]ContractDetails, error) {
+func (s *EthofsService) List(key string) (string, error) {
 	contractData, err := ListExistingContracts(key)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return contractData, nil
+
+	d, err := json.Marshal(contractData)
+	if err != nil {
+		return "", err
+	}
+
+	return string(d), nil
 }
 
 func (s *EthofsService) Add(key string, path string, name string, blocks uint64, recursive bool) (string, error) {

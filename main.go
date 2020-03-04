@@ -16,7 +16,7 @@ import (
 func main() {
 	setFlags() // Activate user deginated options
 
-	if privateKey == "" {
+	if privateKey == "" && !ipcFlag {
 		fmt.Println("No private key detected - exiting")
 		os.Exit(2) // Exit on no private key
 	}
