@@ -61,6 +61,7 @@ func connectToPeers(ctxOLD context.Context, ipfs icore.CoreAPI, peers []string) 
 	return connectedPeers, nil
 }
 
+// verifyUpload will retreive uplode validaiton using the findProvs function with go-ipfs
 func verifyUpload(ctx context.Context, ipfs icore.CoreAPI, cid path.Path) bool {
 	providerCount := int64(0)
 	dhtApi := ipfs.Dht()
@@ -77,15 +78,12 @@ func verifyUpload(ctx context.Context, ipfs icore.CoreAPI, cid path.Path) bool {
 				providerCount = 0
 				out, err = dhtApi.FindProviders(ctx, cid, options.Dht.NumProviders(10))
 				if err != nil {
-					//fmt.Printf("Error finding providers: %s\n", cid.String())
 					return false
 				}
 				time.Sleep(1 * time.Second)
 			} else {
 				providerCount++
-	          		//fmt.Printf("Provider found - ID: %s Provider Count: %d\n", provider.ID.String(), providerCount)
 				if providerCount > 3 {
-					//fmt.Println("Upload Validation Complete")
 					return true
 				} else {
 					time.Sleep(1 * time.Second)
@@ -98,6 +96,7 @@ func verifyUpload(ctx context.Context, ipfs icore.CoreAPI, cid path.Path) bool {
 	return false
 }
 
+// getUnixfsFile returns ipfs file data
 func getUnixfsFile(path string) (files.File, int64, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -119,6 +118,7 @@ func getUnixfsFile(path string) (files.File, int64, error) {
 	return f, st.Size(), nil
 }
 
+// getUnixfsNode returns full ipfs node/data
 func getUnixfsNode(path string) (files.Node, int64, error) {
 	st, err := os.Stat(path)
 	if err != nil {

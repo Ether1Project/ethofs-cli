@@ -16,6 +16,7 @@ import (
 
 type EthofsService struct {}
 
+// Register sets up new hosting user on etho chain - ipc access
 func (s *EthofsService) Register(name, key string) (string, error) {
 	_, err := RegisterAccount(key, name)
 	if err != nil {
@@ -24,6 +25,7 @@ func (s *EthofsService) Register(name, key string) (string, error) {
         return "Successfully Registered " + name, nil
 }
 
+// Remove allows for ethoFS hosting contract removal - ipc access
 func (s *EthofsService) Remove(address string, key string) (string, error) {
 	_, err := RemoveContract(key, common.HexToAddress(address))
 	if err != nil {
@@ -32,6 +34,7 @@ func (s *EthofsService) Remove(address string, key string) (string, error) {
         return "Contract Successfully Removed " + address, nil
 }
 
+// Extend allows ethoFS contract extension - ipc access
 func (s *EthofsService) Extend(name string, duration int32, key string) (string, error) {
 
 	contractDetails, err := GetContractDetails(key, contractName)
@@ -51,6 +54,7 @@ func (s *EthofsService) Extend(name string, duration int32, key string) (string,
         return "Contract Successfully Extended: " + name, nil
 }
 
+// List returns list of currently active ethoFS hosting contracts - ipc access
 func (s *EthofsService) List(key string) (string, error) {
 	contractData, err := ListExistingContracts(key)
 	if err != nil {
@@ -65,6 +69,7 @@ func (s *EthofsService) List(key string) (string, error) {
 	return string(d), nil
 }
 
+// Add allows for ethoFS hosting contract addition - ipc access
 func (s *EthofsService) Add(key string, path string, name string, blocks uint64, recursive bool) (string, error) {
         if blocks == 0 {
                 return "ethofs Data Upload Failed", errors.New("block count is too low")
@@ -141,6 +146,7 @@ func (s *EthofsService) Add(key string, path string, name string, blocks uint64,
 	return "ethofs Data Upload Failed", errors.New("params incorrect")
 }
 
+// ethofsIpc sets up new ipc end point
 func ethofsIpc() {
         ethofs := new(EthofsService)
         server := rpc.NewServer()

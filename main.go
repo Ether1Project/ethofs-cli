@@ -16,9 +16,15 @@ import (
 func main() {
 	setFlags() // Activate user deginated options
 
+	// Look for private key
 	if privateKey == "" && !ipcFlag {
 		fmt.Println("No private key detected - exiting")
 		os.Exit(2) // Exit on no private key
+	}
+
+	// Set default public rpc if no custom rpc is set at runtime
+	if rpcLocation == "" {
+		rpcLocation = "https://rpc.ether1.org"
 	}
 
 	s := spinner.StartNew("Initializing ethofs-cli")
@@ -26,6 +32,7 @@ func main() {
 	s.Stop()
 	fmt.Println("✓ Initializing ethoFSfs-cli: Completed")
 
+	// Check for upload flag
 	if uploadFlag {
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -37,6 +44,7 @@ func main() {
 			panic(fmt.Errorf("Error while initializing ethoFS node: %s", err))
 		}
 
+		// Check for recusrive directory upload
 		if recursiveFlag && inputPath != "" && contractDuration > 0 {
 
 			s := spinner.StartNew("Initializing ethoFS data upload")
@@ -124,6 +132,7 @@ func main() {
 
 	} else if listFlag {
 
+		// List existing ethoFS hosting contracts
 		_, err := ListExistingContracts(privateKey)
 		if err != nil {
 			panic(fmt.Errorf("Error finding existing contracts: %s", err))
@@ -131,6 +140,7 @@ func main() {
 
 	} else if removeFlag && contractName != "" {
 
+		// Initiate ethoFS hosting contract removal
 		contractDetails, err := GetContractDetails(privateKey, contractName)
 		if err != nil {
 			s.Stop()
@@ -145,6 +155,7 @@ func main() {
 
 	} else if extendFlag && contractName != "" && contractDuration > 0 {
 
+		// Initiate ethoFS hosting contract extension
 		contractDetails, err := GetContractDetails(privateKey, contractName)
 		if err != nil {
 			s.Stop()
@@ -165,6 +176,7 @@ func main() {
 
 	} else if (replaceFlag || backupFlag) && contractName != "" && inputPath != "" && contractDuration > 0 {
 
+		// Initiate ethoFS hosting contract replacement
 		contractDetails, err := GetContractDetails(privateKey, contractName)
 		if err != nil {
 			s.Stop()
@@ -311,6 +323,7 @@ func main() {
 		fmt.Println("✓ Stopping ethoFS Node: Completed")
 	} else if registerFlag && ethofsUsername != "" {
 
+		// Initiate new ethoFS user registration
 		s := spinner.StartNew("Initiating ethoFS Registration")
 		time.Sleep(2 * time.Second)
 		s.Stop()

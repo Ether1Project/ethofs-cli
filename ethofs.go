@@ -19,6 +19,7 @@ import (
 	"github.com/janeczku/go-spinner"
 )
 
+// Define default controller smart contract on etho chain
 var controllerContractAddress = "0xc38B47169950D8A28bC77a6Fa7467464f25ADAFc"
 
 type ContractDetails struct {
@@ -493,6 +494,7 @@ func RemoveContract(key string, contractAddress common.Address) (bool, error) {
 	return true, nil
 }
 
+// GetContractDetails fetches ethoFS hosting contract details
 func GetContractDetails(key string, name string) (ContractDetails, error) {
 
 	contractDetails := ContractDetails{}
@@ -581,6 +583,7 @@ func GetContractDetails(key string, name string) (ContractDetails, error) {
 	return contractDetails, nil
 }
 
+// waitForTxConfirmations waits for tx mining confirmation to be received
 func waitForTxConfirmations(client *ethclient.Client, txHash common.Hash, n uint64) (*types.Receipt, error) {
 	rpcTimeout := 120 * time.Second
 	var (

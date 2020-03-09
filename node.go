@@ -48,15 +48,13 @@ func createNode(ctx context.Context, repoPath string) (icore.CoreAPI, error) {
 	return coreapi.NewCoreAPI(node)
 }
 
+// initialzieEthofsNode spins up full functional ethoFS node utilizing go-ipfs libraries
 func initializeEthofsNode(ctx context.Context) (icore.CoreAPI, error) {
 	// Start ethofs node initialization
 	s := spinner.StartNew("Initializing ethoFS node for upload")
 	time.Sleep(3 * time.Second)
 	s.Stop()
 	fmt.Println("✓ Initializing ethoFS node for upload: Completed")
-
-	//ctx, cancel := context.WithCancel(context.Background())
-	//defer cancel()
 
 	// Spawn a node using a temporary path, creating a temporary repo for the run
 	s = spinner.StartNew("Initializing ethoFS data upload repo")

@@ -18,6 +18,7 @@ var backupFlag bool
 var registerFlag bool
 var ethofsUsername string
 var ipcFlag bool
+var rpcLocation string
 
 func setFlags() {
 	flag.BoolVar(&ipcFlag, "ipc", false, "Launch IPC Endpoint - Abilty To Respond to Json Requests")
@@ -33,6 +34,7 @@ func setFlags() {
 	flag.StringVar(&privateKey, "key", "", "Private Key")
 	flag.StringVar(&contractName, "name", "", "Hosting Contract Name")
 	flag.StringVar(&ethofsUsername, "username", "", "ethoFS Registration Username")
+	flag.StringVar(&rpcLocation, "rpc", "", "Ether-1 RPC Endpoint")
 
 	duration := uint(0)
 	flag.UintVar(&duration, "blocks", 0, "Hosting Contract Duration (In Blocks)")
